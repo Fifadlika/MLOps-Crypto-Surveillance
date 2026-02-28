@@ -1,0 +1,66 @@
+project:
+  name: "MLOps-Crypto-Surveillance"
+  version: "0.1.0"
+  description: "Cryptocurrency Anomaly Detection & Volatility Prediction System"
+
+data:
+  trading_pairs:
+    - "BTCUSDT"
+    - "ETHUSDT"
+    - "BNBUSDT"
+  training_window_days: 30
+  archive_after_days: 90
+  raw_data_path: "data/raw"
+  processed_data_path: "data/processed"
+  features_path: "data/features"
+
+streaming:
+  websocket_url: "wss://stream.binance.com:9443"
+  rest_url: "https://api4.binance.com"
+  batch_sync_interval_hours: 6
+  feature_engineering_interval_minutes: 1
+
+model:
+  anomaly_detection:
+    algorithm: "IsolationForest"
+    contamination: 0.05
+    n_estimators: 100
+    incremental_batch_size: 1000
+  volatility_prediction:
+    algorithm: "XGBoost"
+    time_windows:
+      - "1h"
+      - "4h"
+      - "24h"
+
+retraining:
+  time_based_interval_hours: 12
+  performance_degradation_threshold: 0.15
+  psi_threshold: 0.25
+  ab_test_traffic_split: 0.10
+  ab_test_validation_hours: 2
+  rollback_threshold: 0.05
+
+serving:
+  host: "0.0.0.0"
+  port: 8000
+  inference_latency_target_ms: 100
+  data_freshness_target_seconds: 5
+
+monitoring:
+  prometheus_port: 9090
+  grafana_port: 3000
+  scrape_interval_seconds: 15
+  alert_deduplication_minutes: 5
+
+success_metrics:
+  anomaly_detection:
+    min_precision: 0.75
+    min_recall: 0.70
+    min_f1: 0.72
+    max_volatility_mae: 0.15
+  system:
+    max_inference_latency_ms: 100
+    max_data_freshness_seconds: 5
+    min_pipeline_uptime: 0.995
+    min_retraining_success_rate: 0.95
