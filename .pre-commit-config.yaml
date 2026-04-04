@@ -1,0 +1,27 @@
+repos:
+  # Black - Code formatter
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3.11
+        args: ["--line-length=100"]
+
+  # Ruff - Linter (replaces flake8 + isort)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.2
+    hooks:
+      - id: ruff
+        args: ["--line-length=100"]
+      - id: ruff-format
+
+  # Mypy - Static type checker
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - "pydantic>=2.0"
+          - "types-pyyaml"
+          - "types-redis"
+          - "types-requests"
