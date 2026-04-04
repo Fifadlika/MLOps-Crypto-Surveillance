@@ -53,6 +53,9 @@ monitoring:
   scrape_interval_seconds: 15
   alert_deduplication_minutes: 5
 
+mlflow:
+  experiment_name: "ingestion_websocket"
+
 success_metrics:
   anomaly_detection:
     min_precision: 0.75

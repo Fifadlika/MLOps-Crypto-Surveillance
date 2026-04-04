@@ -80,21 +80,29 @@ cp .env.example .env
 nano .env
 ```
 
-### Step 3: Verify Setup
+### Step 3: Sync uv Environment
+```bash
+# Install runtime + dev dependencies into .venv
+uv sync --dev
+
+# Activate the uv-managed virtual environment (optional when using `uv run`)
+source .venv/bin/activate
+```
+
+### Step 4: Verify Setup
 ```bash
 # Check Python version
-python --version
+uv run python --version
 # Expected: Python 3.11.x
 
 # Check installed dependencies
-pip list | grep -E "mlflow|xgboost|fastapi|redis"
+uv run pip list | grep -E "mlflow|xgboost|fastapi|redis"
 
-# Check PYTHONPATH
-echo $PYTHONPATH
-# Expected: /workspaces/MLOps-Crypto-Surveillance/src
+# Run unit tests
+uv run pytest tests/unit -v
 ```
 
-### Step 4: Run EDA Notebook
+### Step 5: Run EDA Notebook
 ```
 1. Open notebooks/01_initial_eda.ipynb from the file explorer
 2. Select kernel: Python Environments → Python 3.11.x

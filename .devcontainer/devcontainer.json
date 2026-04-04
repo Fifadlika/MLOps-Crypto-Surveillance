@@ -7,7 +7,6 @@
       "extensions": [
         "ms-python.python",
         "ms-python.black-formatter",
-        "ms-python.flake8",
         "ms-toolsai.jupyter",
         "ms-azuretools.vscode-docker",
         "github.copilot",
@@ -22,7 +21,7 @@
         "[python]": {
           "editor.defaultFormatter": "ms-python.black-formatter"
         },
-        "python.linting.flake8Enabled": true,
+        "python.linting.ruffEnabled": true,
         "python.linting.enabled": true
       }
     }
