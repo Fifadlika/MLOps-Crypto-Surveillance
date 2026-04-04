@@ -180,11 +180,13 @@ class TradeEvent(BaseModel):
         Redis Streams only store string values. This is the canonical format
         consumed by DataCleaner (src/features/cleaning.py).
 
+        The symbol is intentionally omitted because it is already encoded
+        in the Redis stream key: stream:trades:{symbol}.
+
         Matches the Trade Stream Entry contract in PROJECT_CONTEXT.md §1.
         """
         return {
             "trade_id": str(self.trade_id),
-            "symbol": self.symbol,
             "price": str(self.price),
             "quantity": str(self.quantity),
             "notional": str(self.notional),
@@ -344,11 +346,13 @@ class KlineEvent(BaseModel):
         We flatten the nested KlineData into the top-level dict because
         Redis Streams are flat key-value stores.
 
+        The symbol is encoded in stream:klines:{symbol}, and is_closed is
+        enforced by websocket_client.py before writing.
+
         Matches the Kline Stream Entry contract in PROJECT_CONTEXT.md §1.
         """
         k = self.kline
         return {
-            "symbol": self.symbol,
             "open_time": str(k.open_time),
             "open": str(k.open),
             "high": str(k.high),
@@ -357,7 +361,6 @@ class KlineEvent(BaseModel):
             "volume": str(k.volume),
             "num_trades": str(k.num_trades),
             "buy_sell_ratio": str(k.buy_sell_ratio),
-            "is_closed": str(k.is_closed),
         }
 
 
@@ -496,10 +499,9 @@ class HistoricalKline(BaseModel):
         Serialise to a flat string dict for writing to a Redis Stream.
 
         Historical klines are written to the same Redis Stream as live klines
-        during gap-fill so that DataCleaner processes them identically.
+        during gap-fill, so this output must match the live kline contract.
         """
         return {
-            "symbol": self.symbol,
             "open_time": str(self.open_time),
             "open": str(self.open),
             "high": str(self.high),
@@ -508,6 +510,4 @@ class HistoricalKline(BaseModel):
             "volume": str(self.volume),
             "num_trades": str(self.num_trades),
             "buy_sell_ratio": str(self.buy_sell_ratio),
-            # Historical klines are always closed bars
-            "is_closed": "True",
         }
