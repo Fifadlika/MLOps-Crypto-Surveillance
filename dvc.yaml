@@ -1,0 +1,17 @@
+stages:
+  ingest:
+    cmd: python -m src.ingestion.pipeline
+    outs:
+      - data/raw
+  clean:
+    cmd: python src/preprocess.py
+    deps:
+      - data/raw
+    outs:
+      - data/processed
+  featurize:
+    cmd: python -m src.features.engineering
+    deps:
+      - data/processed
+    outs:
+      - data/features

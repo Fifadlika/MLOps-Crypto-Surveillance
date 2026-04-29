@@ -308,3 +308,11 @@ test: add unit tests for volatility calculator
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+## DVC Setup and Commands
+
+To integrate data versioning:
+1. `dvc init` - Initialize DVC in the workspace.
+2. `dvc repro` - Run data pipeline.
+3. `dvc status` - Check status of the pipeline outputs.
+4. `dvc diff` - Compare DVC controlled files.

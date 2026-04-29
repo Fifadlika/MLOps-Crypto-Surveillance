@@ -1,0 +1,8 @@
+v1.0.0:
+  description: initial feature set
+  features:
+    - price
+    - volume
+    - block_trades
+  model_compatibility: "model_v1.0"
+  changed_fields: "added first 52-field vector implementation"
