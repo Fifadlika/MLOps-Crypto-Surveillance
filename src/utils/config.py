@@ -45,6 +45,14 @@ class RedisConfig(BaseModel):
     decode_responses: bool = True
 
 
+class PostgresConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 5432
+    user: str = "postgres"
+    password: str = "postgres"
+    db: str = "crypto_features"
+
+
 class BinanceCompat(BaseModel):
     ws_base_url: str
     max_reconnect_attempts: int
@@ -68,6 +76,7 @@ class Config(BaseSettings):
     data: DataConfig = DataConfig()
     streaming: StreamingConfig = StreamingConfig()
     redis: RedisConfig = RedisConfig()
+    postgres: PostgresConfig = PostgresConfig()
     mlflow: MlflowConfig = MlflowConfig()
 
     @classmethod
