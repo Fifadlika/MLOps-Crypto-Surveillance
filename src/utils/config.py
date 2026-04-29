@@ -11,13 +11,38 @@ from pydantic_settings import (
 
 class DataConfig(BaseModel):
     trading_pairs: list[str] = Field(default_factory=lambda: ["BTCUSDT"])
+    raw_data_path: str = "data/raw"
+    processed_data_path: str = "data/preprocess"
+    preprocessed_data_path: str = "data/preprocess"
+    features_path: str = "data/features"
+    dedup_bloom_dir: str = "data/raw/.dedup"
 
 
 class StreamingConfig(BaseModel):
     websocket_url: str = "wss://stream.binance.com:9443"
+    rest_url: str = "https://api4.binance.com"
+    rest_timeout_seconds: float = 10.0
+    rest_rate_limit_per_minute: int = 400
+    rest_retry_after_429_seconds: int = 60
     max_reconnect_attempts: int = 10
     base_backoff_seconds: float = 1.0
     max_backoff_seconds: float = 60.0
+    dedup_ttl_seconds: int = 3600
+    bloom_capacity: int = 1_000_000
+    bloom_error_rate: float = 0.001
+    kline_gap_threshold_seconds: int = 300
+    midnight_flush_second: int = 5
+    cleaner_poll_interval_seconds: float = 0.25
+
+
+class RedisConfig(BaseModel):
+    runtime_mode: str = "mock"
+    url: str = "redis://localhost:6379/0"
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+    password: str | None = None
+    decode_responses: bool = True
 
 
 class BinanceCompat(BaseModel):
@@ -42,6 +67,7 @@ class Config(BaseSettings):
 
     data: DataConfig = DataConfig()
     streaming: StreamingConfig = StreamingConfig()
+    redis: RedisConfig = RedisConfig()
     mlflow: MlflowConfig = MlflowConfig()
 
     @classmethod

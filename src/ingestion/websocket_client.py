@@ -194,6 +194,8 @@ class BinanceWebSocketClient:
                 if not self._running:
                     # stop() was called — exit the loop gracefully
                     break
+                if isinstance(raw_message, bytes):
+                    raw_message = raw_message.decode("utf-8")
                 await self._handle_message(raw_message)
 
     async def _handle_message(self, raw_message: str) -> None:

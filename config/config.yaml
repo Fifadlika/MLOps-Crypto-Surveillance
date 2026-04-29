@@ -11,14 +11,34 @@ data:
   training_window_days: 30
   archive_after_days: 90
   raw_data_path: "data/raw"
-  processed_data_path: "data/processed"
+  processed_data_path: "data/preprocess"
+  preprocessed_data_path: "data/preprocess"
   features_path: "data/features"
+  dedup_bloom_dir: "data/raw/.dedup"
 
 streaming:
   websocket_url: "wss://stream.binance.com:9443"
   rest_url: "https://api4.binance.com"
   batch_sync_interval_hours: 6
   feature_engineering_interval_minutes: 1
+  rest_timeout_seconds: 10.0
+  rest_rate_limit_per_minute: 400
+  rest_retry_after_429_seconds: 60
+  dedup_ttl_seconds: 3600
+  bloom_capacity: 1000000
+  bloom_error_rate: 0.001
+  kline_gap_threshold_seconds: 300
+  midnight_flush_second: 5
+  cleaner_poll_interval_seconds: 0.25
+
+redis:
+  runtime_mode: "mock"
+  url: "redis://localhost:6379/0"
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null
+  decode_responses: true
 
 model:
   anomaly_detection:
