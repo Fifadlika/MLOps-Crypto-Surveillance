@@ -1,17 +1,30 @@
+# dvc.yaml
+#
+# Pipeline DVC untuk MLOps-Crypto-Surveillance.
+# Jalankan dengan: dvc repro
+#
+# Dependency graph:
+#   ingest → featurize
+#
+# Kedua stage menggunakan script one-shot yang terminate sendiri
+# sehingga kompatibel dengan DVC (bukan long-running process).
+
 stages:
+
   ingest:
-    cmd: python -m src.ingestion.pipeline
+    cmd: python scripts/pull_historical.py --days 1 --interval 1m
     outs:
-      - data/raw
-  clean:
-    cmd: python src/preprocess.py
-    deps:
-      - data/raw
-    outs:
-      - data/processed
+      - data/raw:
+          cache: true      # DVC menyimpan hash content, bukan file itu sendiri
+          persist: true    # file tetap ada setelah dvc repro (tidak dihapus)
+    desc: "Tarik klines historis dari Binance REST API ke data/raw/"
+
   featurize:
-    cmd: python -m src.features.engineering
+    cmd: python scripts/run_featurize.py --idle-rounds 3
     deps:
-      - data/processed
+      - data/raw          # featurize hanya jalan ulang jika data/raw berubah
     outs:
-      - data/features
+      - data/features:
+          cache: true
+          persist: true
+    desc: "Hitung feature vector dari Redis Stream, flush ke Parquet di data/features/"
