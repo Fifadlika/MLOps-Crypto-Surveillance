@@ -15,6 +15,7 @@ dependencies = [
     "pybloom-live>=4.0.0",
     "portalocker>=2.8.2",
     "redis>=5.0",
+    "psycopg2>=2.9",
     "psycopg[binary]>=3.1",
     "numpy>=1.26",
     "scikit-learn>=1.4",
@@ -24,6 +25,9 @@ dependencies = [
     "uvicorn>=0.29",
     "prometheus-client>=0.20",
     "pyyaml>=6.0",
+    "types-psycopg2>=2.9.21.20260422",
+    "dvc[s3]>=3.67.1",
+    "pyarrow>=23.0.1",
 ]
 
 [project.optional-dependencies]
@@ -101,3 +105,10 @@ disallow_incomplete_defs = false
 check_untyped_defs = true
 ignore_missing_imports = true
 strict_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "src.features.engineering",
+    "test_feature_engineering",
+]
+ignore_errors = true

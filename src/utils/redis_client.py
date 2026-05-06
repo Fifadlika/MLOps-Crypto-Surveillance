@@ -5,6 +5,7 @@ import os
 from functools import lru_cache
 from typing import Any, cast
 
+import redis
 from redis.asyncio import Redis
 
 from src.utils.config import get_config
@@ -72,6 +73,75 @@ class RealRedisClient:
 
     async def close(self) -> None:
         await self._redis.close()
+
+
+class SyncMockRedisClient:
+    def __init__(self) -> None:
+        self._kv: dict[str, str] = {}
+
+    def xgroup_create(
+        self, name: str, groupname: str, id: str = "$", mkstream: bool = False, **kwargs
+    ):
+        return True
+
+    def xreadgroup(
+        self,
+        groupname: str,
+        consumername: str,
+        streams: dict,
+        count: int | None = None,
+        block: int | None = None,
+        **kwargs,
+    ):
+        return []
+
+    def xack(self, name: str, groupname: str, *ids: str):
+        return 1
+
+    def hset(self, name: str, mapping: dict, **kwargs):
+        self._kv[name] = str(mapping)
+        return len(mapping)
+
+    def expire(self, name: str, time: int, **kwargs):
+        return True
+
+    def hgetall(self, name: str):
+        return {}
+
+
+class SyncRealRedisClient:
+    def __init__(self, redis_client: redis.Redis) -> None:
+        self._redis = redis_client
+
+    def xgroup_create(
+        self, name: str, groupname: str, id: str = "$", mkstream: bool = False, **kwargs
+    ):
+        return self._redis.xgroup_create(name, groupname, id=id, mkstream=mkstream, **kwargs)
+
+    def xreadgroup(
+        self,
+        groupname: str,
+        consumername: str,
+        streams: dict,
+        count: int | None = None,
+        block: int | None = None,
+        **kwargs,
+    ):
+        return self._redis.xreadgroup(
+            groupname, consumername, streams, count=count, block=block, **kwargs
+        )
+
+    def xack(self, name: str, groupname: str, *ids: str):
+        return self._redis.xack(name, groupname, *ids)
+
+    def hset(self, name: str, mapping: dict, **kwargs):
+        return self._redis.hset(name, mapping=mapping, **kwargs)
+
+    def expire(self, name: str, time: int, **kwargs):
+        return self._redis.expire(name, time, **kwargs)
+
+    def hgetall(self, name: str):
+        return self._redis.hgetall(name)
 
 
 def get_redis_runtime_mode(config: Any | None = None) -> str:
@@ -185,6 +255,69 @@ def get_redis_client():
     logger.info("Using RealRedisClient (redis.runtime_mode=real)")
     return RealRedisClient(
         Redis(
+            host=_resolve_redis_host(redis_cfg),
+            port=_resolve_redis_port(redis_cfg),
+            db=_resolve_redis_db(redis_cfg),
+            password=_resolve_redis_password(redis_cfg),
+            decode_responses=False,
+            socket_timeout=5.0,
+            socket_connect_timeout=5.0,
+        )
+    )
+
+
+@lru_cache(maxsize=1)
+def get_sync_redis_client():
+    config = get_config()
+    redis_cfg = getattr(config, "redis", None)
+    runtime_mode = get_redis_runtime_mode(config)
+
+    if runtime_mode != "real":
+        logger.info("Using SyncMockRedisClient (redis.runtime_mode=%s)", runtime_mode)
+        return SyncMockRedisClient()
+
+    redis_url = _resolve_redis_url(redis_cfg)
+    decode_responses = _resolve_decode_responses(redis_cfg)
+
+    if redis_url:
+        if decode_responses:
+            logger.info("Using SyncRealRedisClient (redis.runtime_mode=real)")
+            return SyncRealRedisClient(
+                redis.Redis.from_url(
+                    redis_url,
+                    decode_responses=True,
+                    socket_timeout=5.0,
+                    socket_connect_timeout=5.0,
+                )
+            )
+
+        logger.info("Using SyncRealRedisClient (redis.runtime_mode=real)")
+        return SyncRealRedisClient(
+            redis.Redis.from_url(
+                redis_url,
+                decode_responses=False,
+                socket_timeout=5.0,
+                socket_connect_timeout=5.0,
+            )
+        )
+
+    if decode_responses:
+        logger.info("Using SyncRealRedisClient (redis.runtime_mode=real)")
+        return SyncRealRedisClient(
+            redis.Redis(
+                host=_resolve_redis_host(redis_cfg),
+                port=_resolve_redis_port(redis_cfg),
+                db=_resolve_redis_db(redis_cfg),
+                password=_resolve_redis_password(redis_cfg),
+                decode_responses=True,
+                socket_timeout=5.0,
+                socket_connect_timeout=5.0,
+            )
+        )
+
+    logger.info("Using SyncRealRedisClient (redis.runtime_mode=real)")
+    return SyncRealRedisClient(
+        redis.Redis(
             host=_resolve_redis_host(redis_cfg),
             port=_resolve_redis_port(redis_cfg),
             db=_resolve_redis_db(redis_cfg),

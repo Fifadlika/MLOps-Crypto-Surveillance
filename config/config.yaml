@@ -32,12 +32,12 @@ streaming:
   cleaner_poll_interval_seconds: 0.25
 
 redis:
-  runtime_mode: "mock"
-  url: "redis://localhost:6379/0"
-  host: "localhost"
-  port: 6379
-  db: 0
-  password: null
+  runtime_mode: ${REDIS_RUNTIME_MODE}
+  url: ${REDIS_URL}
+  host: ${REDIS_HOST}
+  port: ${REDIS_PORT}
+  db: ${REDIS_DB}
+  password: ${REDIS_PASSWORD}
   decode_responses: true
 
 model:
@@ -87,3 +87,10 @@ success_metrics:
     max_data_freshness_seconds: 5
     min_pipeline_uptime: 0.995
     min_retraining_success_rate: 0.95
+
+postgres:
+  host: ${POSTGRES_HOST}
+  port: ${POSTGRES_PORT}
+  user: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  db: ${POSTGRES_DB}

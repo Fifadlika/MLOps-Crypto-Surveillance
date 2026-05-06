@@ -4,7 +4,7 @@ from typing import Optional
 import psycopg2
 
 from src.utils.logger import get_logger
-from src.utils.redis_client import get_redis_client
+from src.utils.redis_client import get_sync_redis_client
 
 logger = get_logger(__name__)
 
@@ -14,7 +14,7 @@ class FeatureStore:
         from src.utils.config import get_config
 
         self.config = get_config()
-        self.redis = get_redis_client()
+        self.redis = get_sync_redis_client()
         self.pg_conn = None
         self._init_pg()
 
