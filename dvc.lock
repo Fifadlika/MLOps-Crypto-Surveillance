@@ -1,0 +1,24 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python scripts/pull_historical.py --days 1 --interval 1m
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: 4a57a32391702e146819788a91f881e2.dir
+      size: 13807869
+      nfiles: 49
+  featurize:
+    cmd: python scripts/run_featurize.py --idle-rounds 3
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 4a57a32391702e146819788a91f881e2.dir
+      size: 13807869
+      nfiles: 49
+    outs:
+    - path: data/features
+      hash: md5
+      md5: 0e25f7534333b1bcf6b18d8f7514a66c.dir
+      size: 1784999
+      nfiles: 10
