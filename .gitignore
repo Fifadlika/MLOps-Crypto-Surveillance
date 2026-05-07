@@ -209,3 +209,19 @@ __marimo__/
 
 # Local Project Context for LLMs
 PROJECT_CONTEXT.md
+
+# Config file containing sensitive information (e.g. database credentials, API keys)
+config/config.yaml
+
+# Data files
+data/preprocess/
+data/processed/
+data/raw
+
+# Runtime files
+mlflow.db
+pytest_output.txt
+
+# Lock files dari AtomicJsonlWriter
+data/**/*.lock
+data/**/*.meta

@@ -5,16 +5,16 @@ stages:
     outs:
     - path: data/raw
       hash: md5
-      md5: 4a57a32391702e146819788a91f881e2.dir
-      size: 13807869
+      md5: eec7e053243fa762e8fef9004ea66a00.dir
+      size: 14759293
       nfiles: 49
   featurize:
     cmd: python scripts/run_featurize.py --idle-rounds 3
     deps:
     - path: data/raw
       hash: md5
-      md5: 4a57a32391702e146819788a91f881e2.dir
-      size: 13807869
+      md5: eec7e053243fa762e8fef9004ea66a00.dir
+      size: 14759293
       nfiles: 49
     outs:
     - path: data/features
