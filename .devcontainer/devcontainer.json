@@ -28,7 +28,6 @@
   },
 
   "features": {
-    "ghcr.io/devcontainers/features/redis:1": {},
     "ghcr.io/devcontainers/features/aws-cli:1": {}
   },
 
