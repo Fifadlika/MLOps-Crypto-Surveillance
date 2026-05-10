@@ -27,6 +27,11 @@
     }
   },
 
+  "features": {
+    "ghcr.io/devcontainers/features/redis:1": {},
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
+  },
+
   "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo 'source $HOME/.local/bin/env' >> ~/.bashrc",
 
   "remoteEnv": {
