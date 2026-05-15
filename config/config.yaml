@@ -88,9 +88,3 @@ success_metrics:
     min_pipeline_uptime: 0.995
     min_retraining_success_rate: 0.95
 
-postgres:
-  host: "localhost"
-  port: 5432
-  user: "cs"
-  password: "cs"
-  db: "crypto_surveillance"
