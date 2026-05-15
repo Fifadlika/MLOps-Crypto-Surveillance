@@ -40,8 +40,8 @@
     "PGHOST": "localhost",
     "PGPORT": "5432",
     "PGDATABASE": "crypto_surveillance",
-    "PGUSER": "${localEnv:PGUSER}",
-    "PGPASSWORD": "${localEnv:PGPASSWORD}",
+    "PGUSER": "${localEnv:POSTGRES_USER}",
+    "PGPASSWORD": "${localEnv:POSTGRES_PASSWORD}",
     "DATABASE_URL": "${localEnv:DATABASE_URL}"
   },
 

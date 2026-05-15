@@ -44,7 +44,13 @@ class RedisConfig(BaseSettings):
     password: str | None = Field(default=None, alias="REDIS_PASSWORD")
     decode_responses: bool = Field(default=True, alias="REDIS_DECODE_RESPONSES")
 
-    model_config = {"populate_by_name": True}
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_nested_delimiter="__",
+        extra="ignore",
+        populate_by_name=True,
+    )
 
 
 class PostgresConfig(BaseSettings):
@@ -54,7 +60,13 @@ class PostgresConfig(BaseSettings):
     user: str = Field(alias="POSTGRES_USER")
     password: str = Field(alias="POSTGRES_PASSWORD")
 
-    model_config = {"populate_by_name": True}
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_nested_delimiter="__",
+        extra="ignore",
+        populate_by_name=True,
+    )
 
 
 class BinanceCompat(BaseModel):
@@ -75,6 +87,7 @@ class Config(BaseSettings):
         env_nested_delimiter="__",
         extra="ignore",
         yaml_file=str(Path(__file__).resolve().parents[2] / "config" / "config.yaml"),
+        populate_by_name=True,
     )
 
     data: DataConfig = DataConfig()
