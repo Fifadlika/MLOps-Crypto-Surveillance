@@ -35,22 +35,26 @@ class StreamingConfig(BaseModel):
     cleaner_poll_interval_seconds: float = 0.25
 
 
-class RedisConfig(BaseModel):
-    runtime_mode: str = "mock"
-    url: str = "redis://localhost:6379/0"
-    host: str = "localhost"
-    port: int = 6379
-    db: int = 0
-    password: str | None = None
-    decode_responses: bool = True
+class RedisConfig(BaseSettings):
+    runtime_mode: str = Field(default="real", alias="REDIS_RUNTIME_MODE")
+    url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
+    host: str = Field(default="localhost", alias="REDIS_HOST")
+    port: int = Field(default=6379, alias="REDIS_PORT")
+    db: int = Field(default=0, alias="REDIS_DB")
+    password: str | None = Field(default=None, alias="REDIS_PASSWORD")
+    decode_responses: bool = Field(default=True, alias="REDIS_DECODE_RESPONSES")
+
+    model_config = {"populate_by_name": True}
 
 
-class PostgresConfig(BaseModel):
-    host: str = "localhost"
-    port: int = 5432
-    user: str = "postgres"
-    password: str = "postgres"
-    db: str = "crypto_features"
+class PostgresConfig(BaseSettings):
+    host: str = Field(default="localhost", alias="POSTGRES_HOST")
+    port: int = Field(default=5432, alias="POSTGRES_PORT")
+    db: str = Field(default="crypto_surveillance", alias="POSTGRES_DB")
+    user: str = Field(alias="POSTGRES_USER")
+    password: str = Field(alias="POSTGRES_PASSWORD")
+
+    model_config = {"populate_by_name": True}
 
 
 class BinanceCompat(BaseModel):
