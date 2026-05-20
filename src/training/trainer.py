@@ -49,10 +49,7 @@ class IsolationForestTrainer:
         return self.model.score_samples(X_scaled)
 
     def get_params(self) -> dict:
-        return {
-            "model_params": self.params.copy(),
-            "is_fitted": self.is_fitted,
-        }
+        return self.params.copy()
 
 
 class XGBoostVolatilityTrainer:
