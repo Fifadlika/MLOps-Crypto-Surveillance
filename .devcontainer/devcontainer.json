@@ -6,16 +6,16 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-python.black-formatter",
         "ms-toolsai.jupyter",
         "ms-azuretools.vscode-docker",
         "github.copilot",
         "eamodio.gitlens",
         "redhat.vscode-yaml",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "charliermarsh.ruff"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "ms-python.black-formatter",
         "[python]": {
@@ -28,11 +28,16 @@
   },
 
   "features": {
-    "ghcr.io/devcontainers/features/aws-cli:1": {}
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/astral-sh/uv-devcontainer:0": {},
+    "ghcr.io/devcontainers/features/postgres:1": {},
+    "ghcr.io/devcontainers/features/redis-server:1": {}
   },
 
   "onCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo 'source $HOME/.local/bin/env' >> ~/.bashrc",
 
+  "postCreateCommand": "uv sync --all-groups --all-extras",
+  
   "postStartCommand": "bash .devcontainer/setup_services.sh",
 
   "remoteEnv": {
