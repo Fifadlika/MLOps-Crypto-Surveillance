@@ -225,3 +225,8 @@ pytest_output.txt
 # Lock files dari AtomicJsonlWriter
 data/**/*.lock
 data/**/*.meta
+
+# MLflow local tracking tracking data
+mlflow_data/
+mlruns/
+mlflow.db
