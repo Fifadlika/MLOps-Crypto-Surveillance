@@ -111,6 +111,10 @@ implicit_optional = true
 module = [
     "features.engineering",
     "test_feature_engineering",
-    "training.trainer"
+    "training.trainer",
+    "mlflow",
+    "mlflow.*",
+    "src.training.train"
 ]
 ignore_errors = true
+ignore_missing_imports = true
