@@ -251,7 +251,19 @@ This is the primary reproducibility guarantee: to retrain a model on the exact d
 | `data-v1.0.3` | `17e9e51` | Daily snapshot 2026-05-14 *(current)* |
  
 For the full changelog including schema changes and model compatibility notes, see [`data/VERSION_REGISTRY.yaml`](data/VERSION_REGISTRY.yaml).
- 
+
+---
+
+## Running Experiments
+
+```bash
+# Single run
+python src/training/train.py --symbol BTCUSDT --model anomaly --contamination 0.05
+
+# View MLflow UI
+mlflow ui --backend-store-uri mlflow/ --port 5000
+# Open http://localhost:5000
+```
 ---
  
 ## 🏛️ System Architecture
