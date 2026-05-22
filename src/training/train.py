@@ -1,15 +1,18 @@
-# src/training/train.py
-
+# ruff: noqa
 import argparse
 import logging
 
-import mlflow
 import mlflow.sklearn
 import mlflow.xgboost
 import numpy as np
 
+import mlflow
 from src.training.evaluator import check_thresholds, evaluate_anomaly, evaluate_volatility
-from src.training.trainer import BaseTrainer, IsolationForestTrainer, XGBoostVolatilityTrainer
+from src.training.trainer import (
+    BaseTrainer,
+    IsolationForestTrainer,
+    XGBoostVolatilityTrainer,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,7 +54,7 @@ def load_features(symbol: str, model_type: str):
 
 def run_experiment(symbol: str, model_type: str, params: dict):
     # mlflow.set_tracking_uri(tracking_uri)
-    mlflow.set_tracking_uri("mlflow_datas/")
+    mlflow.set_tracking_uri("mlflow_data/")
     mlflow.set_experiment(EXPERIMENT_NAMES[model_type])
 
     with mlflow.start_run(run_name=f"{symbol}_{model_type}"):
@@ -69,7 +72,7 @@ def run_experiment(symbol: str, model_type: str, params: dict):
             metrics = evaluate_anomaly(y, y_pred)
             mlflow.log_params(trainer.get_params())
             mlflow.log_metrics(metrics)
-            mlflow.sklearn.log_model(trainer.model, "isolation-forest")
+            mlflow.sklearn.log_model(trainer.model, name="isolation-forest")
             passed, details = check_thresholds(metrics, "anomaly")
 
         else:
@@ -79,7 +82,7 @@ def run_experiment(symbol: str, model_type: str, params: dict):
             metrics = evaluate_volatility(y, y_pred)
             mlflow.log_params(trainer.get_params())
             mlflow.log_metrics(metrics)
-            mlflow.xgboost.log_model(trainer.model, "xgboost-volatility")
+            mlflow.xgboost.log_model(trainer.model, name="xgboost-volatility")
             passed, details = check_thresholds(metrics, "volatility")
 
         mlflow.log_param("threshold_passed", passed)
