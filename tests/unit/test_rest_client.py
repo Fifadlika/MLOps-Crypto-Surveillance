@@ -43,7 +43,8 @@ class FakeHTTPClient:
         result = queue.pop(0)
         if isinstance(result, Exception):
             raise result
-        return result
+
+        return result  # type: ignore
 
     async def aclose(self) -> None:
         return None
@@ -106,7 +107,7 @@ async def test_sync_klines_publishes_and_appends_without_overwrite(tmp_path) -> 
         }
     )
     redis = RecordingRedis()
-    client = BinanceRESTClient(config=_config(tmp_path), redis_client=redis, http_client=fake_http)
+    client = BinanceRESTClient(config=_config(tmp_path), redis_client=redis, http_client=fake_http)  # type: ignore
 
     first_count = await client.sync_klines("BTCUSDT", start_ms=start_ms, end_ms=end_ms)
     second_count = await client.sync_klines("BTCUSDT", start_ms=start_ms, end_ms=end_ms)
@@ -147,7 +148,7 @@ async def test_sync_klines_uses_fallback_when_primary_times_out(tmp_path) -> Non
         }
     )
     redis = RecordingRedis()
-    client = BinanceRESTClient(config=_config(tmp_path), redis_client=redis, http_client=fake_http)
+    client = BinanceRESTClient(config=_config(tmp_path), redis_client=redis, http_client=fake_http)  # type: ignore
 
     count = await client.sync_klines(
         "ETHUSDT",
@@ -176,7 +177,7 @@ async def test_sync_klines_retries_after_http_429(
         }
     )
     redis = RecordingRedis()
-    client = BinanceRESTClient(config=_config(tmp_path), redis_client=redis, http_client=fake_http)
+    client = BinanceRESTClient(config=_config(tmp_path), redis_client=redis, http_client=fake_http)  # type: ignore
 
     mocked_sleep = AsyncMock()
     monkeypatch.setattr("src.ingestion.rest_client.asyncio.sleep", mocked_sleep)
@@ -206,7 +207,7 @@ async def test_dedup_persist_across_client_restart(tmp_path) -> None:
     first_client = BinanceRESTClient(
         config=_config(tmp_path),
         redis_client=first_redis,
-        http_client=first_http,
+        http_client=first_http,  # type: ignore
     )
 
     second_http = FakeHTTPClient({primary: [_response(primary, 200, page)]})
@@ -214,7 +215,7 @@ async def test_dedup_persist_across_client_restart(tmp_path) -> None:
     second_client = BinanceRESTClient(
         config=_config(tmp_path),
         redis_client=second_redis,
-        http_client=second_http,
+        http_client=second_http,  # type: ignore
     )
 
     first_count = await first_client.sync_klines("BTCUSDT", start_ms=start_ms, end_ms=end_ms)

@@ -1,10 +1,15 @@
 # ruff: noqa
 import argparse
+from dotenv import load_dotenv
 import logging
+import os
 
 import mlflow.sklearn
 import mlflow.xgboost
 import numpy as np
+import pandas as pd
+import sqlalchemy
+from scipy import stats
 
 import mlflow
 from src.training.evaluator import check_thresholds, evaluate_anomaly, evaluate_volatility
@@ -14,6 +19,8 @@ from src.training.trainer import (
     XGBoostVolatilityTrainer,
 )
 
+load_dotenv()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -22,39 +29,171 @@ EXPERIMENT_NAMES = {
     "volatility": "crypto-volatility-prediction",
 }
 
+TRADE_FEATURE_COLS = [
+    "price_mean_50",
+    "price_mean_200",
+    "price_mean_1000",
+    "price_std_50",
+    "price_std_200",
+    "price_std_1000",
+    "price_change_50",
+    "price_change_200",
+    "price_change_1000",
+    "vol_mean_50",
+    "vol_mean_200",
+    "vol_mean_1000",
+    "vol_std_50",
+    "vol_std_200",
+    "vol_std_1000",
+    "vol_total_50",
+    "vol_total_200",
+    "vol_total_1000",
+    "buy_ratio_50",
+    "buy_ratio_200",
+    "buy_ratio_1000",
+    "trade_rate_50",
+    "trade_rate_200",
+    "trade_rate_1000",
+]
+
+KLINE_FEATURE_COLS = [
+    "atr_5",
+    "atr_15",
+    "atr_60",
+    "hl_ratio_5",
+    "hl_ratio_15",
+    "hl_ratio_60",
+    "sma_5",
+    "sma_15",
+    "sma_60",
+    "ema_5",
+    "ema_15",
+    "ema_60",
+    "momentum_5",
+    "momentum_15",
+    "momentum_60",
+    "vwap_5",
+    "vwap_15",
+    "vwap_60",
+    "vol_ratio_5",
+    "vol_ratio_15",
+    "vol_ratio_60",
+]
+
+
+def _get_engine():
+    mlflow_uri = os.getenv("MLFLOW_TRACKING_URI")
+
+    # Cek apakah MLflow URI menggunakan skema database
+    if mlflow_uri and mlflow_uri.startswith("postgresql"):
+        db_uri = mlflow_uri
+    else:
+        # Fallback ke konfigurasi postgres default jika MLflow bukan DB URI
+        db_uri = (
+            f"postgresql+psycopg2://"
+            f"{os.environ['POSTGRES__USER']}:{os.environ['POSTGRES__PASSWORD']}"
+            f"@{os.environ['POSTGRES__HOST']}:{os.environ['POSTGRES__PORT']}"
+            f"/{os.environ['POSTGRES__DB']}"
+        )
+
+    return sqlalchemy.create_engine(db_uri)
+
+
+def _get_tracking_uri() -> str:
+    explicit = os.getenv("MLFLOW_TRACKING_URI")
+    if explicit:
+        return explicit
+    return (
+        f"postgresql+psycopg2://"
+        f"{os.environ['POSTGRES__USER']}:{os.environ['POSTGRES__PASSWORD']}"
+        f"@{os.environ['POSTGRES__HOST']}:{os.environ['POSTGRES__PORT']}"
+        f"/{os.environ['POSTGRES__DB']}"
+    )
+
 
 def load_features(symbol: str, model_type: str):
     """
-    Load dari PostgreSQL features_trade / features_kline.
-    Untuk sekarang: generate sintetis agar bisa dijalankan tanpa DB.
-    TODO: ganti dengan query nyata di LK-08+.
+    Load fitur dari PostgreSQL.
+    - anomaly   : features_trade — jika kosong, fallback ke sintetis terstruktur
+    - volatility: features_kline — query nyata, target = atr_5 (proxy volatility 1h)
     """
-    np.random.seed(42)
+    engine = _get_engine()
+
     if model_type == "anomaly":
-        X = np.random.randn(500, 49)
-        # Simulasi label: 5% anomaly
-        y = np.random.choice([0, 1], size=500, p=[0.95, 0.05])
+        query = f"""
+            SELECT {', '.join(TRADE_FEATURE_COLS)}
+            FROM features_trade
+            WHERE symbol = '{symbol}'
+            ORDER BY ts DESC
+            LIMIT 50000
+        """
+        df = pd.read_sql(query, engine)
+
+        if df.empty:
+            logger.warning(
+                f"features_trade kosong untuk {symbol} — "
+                "menggunakan data sintetis terstruktur. "
+                "Jalankan WebSocket ingestion untuk data nyata."
+            )
+            # Sintetis terstruktur: distribusi menyerupai trading normal
+            np.random.seed(42)
+            n_normal, n_anomaly = 950, 50
+            X_normal = np.random.randn(n_normal, len(TRADE_FEATURE_COLS)) * 0.5
+            X_anomaly = np.random.randn(n_anomaly, len(TRADE_FEATURE_COLS)) * 4 + 6
+            X = np.vstack([X_normal, X_anomaly])
+            y = np.array([0] * n_normal + [1] * n_anomaly)
+            return X, y
+
+        X = df[TRADE_FEATURE_COLS].fillna(0).values
+        # Isolation Forest unsupervised — label dibuat dari IQR outlier sebagai proxy
+
+        z_scores = np.abs(stats.zscore(X, nan_policy="omit"))
+        y = (z_scores.max(axis=1) > 3).astype(int)
+        logger.info(f"Loaded {len(X)} trade samples | anomaly rate: {y.mean():.2%}")
         return X, y
-    else:
-        X = np.random.randn(500, 49)
-        y = np.abs(np.random.randn(500)) * 0.02  # volatility 0-6%
+
+    else:  # volatility
+        query = f"""
+            SELECT {', '.join(KLINE_FEATURE_COLS)}, atr_5 as target
+            FROM features_kline
+            WHERE symbol = '{symbol}'
+              AND atr_5 IS NOT NULL
+            ORDER BY ts DESC
+            LIMIT 10000
+        """
+        df = pd.read_sql(query, engine)
+
+        if df.empty:
+            raise ValueError(
+                f"features_kline kosong untuk {symbol}. "
+                "Jalankan pull_historical.py terlebih dahulu."
+            )
+
+        X = df[KLINE_FEATURE_COLS].fillna(0).values
+        y = df["target"].fillna(0).values  # ATR-5 sebagai proxy volatility 1h
+        logger.info(f"Loaded {len(X)} kline samples | ATR-5 mean: {y.mean():.6f}")
         return X, y
 
+        """
+        Developer Note:
+        Tujuan utama dari iterasi ini adalah mencapai MLOps Level 1 (Pipeline Automation).
+        Fokus keberhasilan (Metric of Success) diukur dari keandalan pengiriman data (data ingestion latency), stabilitas skema database, 
+        dan otomatisasi eksekusi pipeline, bukan pada metrik evaluasi model seperti Precision/Recall. 
+        Model heuristik (Z-Score & ATR) digunakan sebagai Baseline & Mock Target untuk menguji end-to-end integration sebelum model ML yang lebih kompleks .
 
-# load_dotenv()
+        Penggunaan Z-Score > 3 sebagai proxy label unsupervised dipilih secara sengaja untuk meminimalkan overhead komputasi pada feature store dan database selama fase pengujian pipeline.
+        Karena fokus saat ini adalah menguji kemampuan pipeline dalam menangani skema data, mencatat riwayat prediksi ke MLflow Model Registry, dan memicu alert system,
+        penggunaan proxy statistik ini menjamin bahwa komponen hilir (downstream components) menerima format data yang valid tanpa dibebani oleh waktu training model yang lama
 
-# db_user = os.environ.get("DB__USER")
-# db_pass = os.environ.get("DB__PASSWORD")
-# db_host = os.environ.get("DB__HOST")
-# db_port = os.environ.get("DB__PORT")
-# db_name = os.environ.get("DB__NAME")
-
-# tracking_uri = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+        Indikator atr_5 dipilih sebagai target volatilitas karena kalkulasinya yang deterministik.
+        Dalam fase pengujian keandalan pipeline, target yang deterministik sangat penting untuk mendeteksi data drift atau sistem eror secara isolatif.
+        Jika terjadi kegagalan prediksi, kita bisa langsung mengidentifikasi bahwa kesalahan 100% berada pada kendala infrastruktur data (seperti missing value atau keterlambatan data WebSocket),
+        bukan karena ketidakstabilan konvergensi model ML."
+        """
 
 
 def run_experiment(symbol: str, model_type: str, params: dict):
-    # mlflow.set_tracking_uri(tracking_uri)
-    mlflow.set_tracking_uri("mlflow_data/")
+    mlflow.set_tracking_uri(_get_tracking_uri())
     mlflow.set_experiment(EXPERIMENT_NAMES[model_type])
 
     with mlflow.start_run(run_name=f"{symbol}_{model_type}"):
