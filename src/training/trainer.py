@@ -2,6 +2,7 @@
 # src/training/trainer.py
 
 import logging
+from abc import ABC, abstractmethod
 from typing import Optional
 
 import numpy as np
@@ -12,7 +13,21 @@ from sklearn.preprocessing import StandardScaler
 logger = logging.getLogger(__name__)
 
 
-class IsolationForestTrainer:
+class BaseTrainer(ABC):
+    def __init__(self) -> None:
+        self.is_fitted: bool = False
+
+    @abstractmethod
+    def fit(self, X: np.ndarray, *args, **kwargs) -> "BaseTrainer": ...
+
+    @abstractmethod
+    def predict(self, X: np.ndarray) -> np.ndarray: ...
+
+    @abstractmethod
+    def get_params(self) -> dict: ...
+
+
+class IsolationForestTrainer(BaseTrainer):
     """Trainer untuk anomaly detection menggunakan Isolation Forest."""
 
     DEFAULT_PARAMS = {
@@ -23,6 +38,7 @@ class IsolationForestTrainer:
     }
 
     def __init__(self, params: Optional[dict] = None):
+        super().__init__()
         self.params = {**self.DEFAULT_PARAMS, **(params or {})}
         self.model = IsolationForest(**self.params)
         self.scaler = StandardScaler()
@@ -52,7 +68,7 @@ class IsolationForestTrainer:
         return self.params.copy()
 
 
-class XGBoostVolatilityTrainer:
+class XGBoostVolatilityTrainer(BaseTrainer):
     """Trainer untuk volatility prediction (regression)."""
 
     DEFAULT_PARAMS = {
@@ -68,6 +84,7 @@ class XGBoostVolatilityTrainer:
     VALID_WINDOWS = {"1h", "4h", "24h"}
 
     def __init__(self, params: Optional[dict] = None, target_window: str = "1h"):
+        super().__init__()
         self.params = {**self.DEFAULT_PARAMS, **(params or {})}
         if target_window not in self.VALID_WINDOWS:
             raise ValueError(
@@ -90,7 +107,4 @@ class XGBoostVolatilityTrainer:
         return self.model.predict(X)
 
     def get_params(self) -> dict:
-        return {
-            "model_params": self.params.copy(),
-            "is_fitted": self.is_fitted,
-        }
+        return {**self.params.copy(), "target_window": self.target_window}

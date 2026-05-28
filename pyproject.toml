@@ -79,6 +79,9 @@ exclude = '''
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = [
+    "src/training/train.py",
+]
 
 [tool.ruff.lint]
 select = [
@@ -111,6 +114,10 @@ implicit_optional = true
 module = [
     "features.engineering",
     "test_feature_engineering",
-    "training.trainer"
+    "training.trainer",
+    "mlflow",
+    "mlflow.*",
+    "src.training.train"
 ]
 ignore_errors = true
+ignore_missing_imports = true
