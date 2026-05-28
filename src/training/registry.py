@@ -1,6 +1,7 @@
 # src/training/registry.py
 # mypy: ignore-errors
 import logging
+import os
 
 import mlflow
 from mlflow import MlflowClient
@@ -15,11 +16,25 @@ MODEL_NAMES = {
 STAGE_ORDER = ["None", "Staging", "Production"]
 
 
+def _get_tracking_uri() -> str:
+    explicit = os.getenv("MLFLOW_TRACKING_URI")
+    if explicit:
+        return explicit
+    return (
+        f"postgresql+psycopg2://"
+        f"{os.environ['POSTGRES__USER']}:{os.environ['POSTGRES__PASSWORD']}"
+        f"@{os.environ['POSTGRES__HOST']}:{os.environ['POSTGRES__PORT']}"
+        f"/{os.environ['POSTGRES__DB']}"
+    )
+
+
 def register_model(run_id: str, model_type: str, artifact_path: str) -> str:
     """
     Daftarkan model dari run_id ke MLflow Model Registry.
     Returns: version string
     """
+    uri = _get_tracking_uri()
+    mlflow.set_tracking_uri(uri)
     model_uri = f"runs:/{run_id}/{artifact_path}"
     model_name = MODEL_NAMES[model_type]
     result = mlflow.register_model(model_uri, model_name)
@@ -29,7 +44,8 @@ def register_model(run_id: str, model_type: str, artifact_path: str) -> str:
 
 def transition_stage(model_type: str, version: str, target_stage: str):
     """Pindahkan model ke stage tertentu."""
-    client = MlflowClient(tracking_uri="mlflow/")
+    uri = _get_tracking_uri()
+    client = MlflowClient(tracking_uri=uri)
     model_name = MODEL_NAMES[model_type]
     client.transition_model_version_stage(
         name=model_name,
@@ -42,6 +58,8 @@ def transition_stage(model_type: str, version: str, target_stage: str):
 
 def load_production_model(model_type: str):
     """Load model dengan stage Production untuk inference."""
+    uri = _get_tracking_uri()
+    mlflow.set_tracking_uri(uri)
     model_name = MODEL_NAMES[model_type]
     model_uri = f"models:/{model_name}/Production"
     model = mlflow.pyfunc.load_model(model_uri)
@@ -50,7 +68,8 @@ def load_production_model(model_type: str):
 
 
 def get_latest_version(model_type: str, stage: str = "Production") -> str | None:
-    client = MlflowClient(tracking_uri="mlflow/")
+    uri = _get_tracking_uri()
+    client = MlflowClient(tracking_uri=uri)
     model_name = MODEL_NAMES[model_type]
     versions = client.get_latest_versions(model_name, stages=[stage])
     return versions[0].version if versions else None

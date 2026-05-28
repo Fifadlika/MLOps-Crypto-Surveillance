@@ -271,7 +271,7 @@ class KlineData(BaseModel):
         """
         if self.high < self.low:
             raise ValueError(
-                f"high ({self.high}) must be >= low ({self.low}) " f"at open_time={self.open_time}"
+                f"high ({self.high}) must be >= low ({self.low}) at open_time={self.open_time}"
             )
         if self.high < self.open or self.high < self.close:
             raise ValueError(
