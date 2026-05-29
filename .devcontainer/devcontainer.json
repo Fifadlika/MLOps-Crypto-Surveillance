@@ -1,11 +1,12 @@
 {
   "name": "MLOps-Crypto-Surveillance",
   "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
-  
+
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
+        "ms-python.black-formatter",        // ✅ added
         "ms-toolsai.jupyter",
         "ms-azuretools.vscode-docker",
         "github.copilot",
@@ -29,26 +30,14 @@
 
   "features": {
     "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/astral-sh/uv-devcontainer:0": {},
+    "ghcr.io/va-h/devcontainers-features/uv:1": {}, 
     "ghcr.io/devcontainers/features/postgres:1": {},
     "ghcr.io/devcontainers/features/redis-server:1": {}
   },
 
-  "onCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo 'source $HOME/.local/bin/env' >> ~/.bashrc",
+  "postCreateCommand": "uv sync --all-groups --all-extras && uv run pre-commit install",
 
-  "postCreateCommand": "uv sync --all-groups --all-extras",
-  
   "postStartCommand": "bash .devcontainer/setup_services.sh",
-
-  "remoteEnv": {
-    "PYTHONPATH": "${containerWorkspaceFolder}/src",
-    "PGHOST": "localhost",
-    "PGPORT": "5432",
-    "PGDATABASE": "crypto_surveillance",
-    "PGUSER": "${localEnv:POSTGRES_USER}",
-    "PGPASSWORD": "${localEnv:POSTGRES_PASSWORD}",
-    "DATABASE_URL": "${localEnv:DATABASE_URL}"
-  },
 
   "forwardPorts": [8000, 8888, 3000, 9090, 6379],
   "portsAttributes": {
