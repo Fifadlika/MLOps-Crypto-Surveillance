@@ -29,7 +29,7 @@
   },
 
   "features": {
-    "ghcr.io/devcontainers/features/asws-cli:1": {},
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
     "ghcr.io/va-h/devcontainers-features/uv:1": {}, 
     "ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {},
     "ghcr.io/42atomys/devcontainers-features/redis-cli:1": {}
