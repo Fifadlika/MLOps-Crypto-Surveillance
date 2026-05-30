@@ -11,7 +11,7 @@ services:
     command: sleep infinity
     environment:
       - DATABASE_URL=postgresql://${POSTGRES__USER}:${POSTGRES__PASSWORD}@db:${POSTGRES__PORT}/${POSTGRES__DB}
-      - REDIS_URL=redis://:${REDIS__PASSWORD}@redis:${REDIS__PORT}/0
+      - REDIS_URL=redis://redis:${REDIS__PORT}/0
     depends_on:
       db:
         condition: service_healthy
@@ -43,13 +43,13 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS__PASSWORD}
+    command: redis-server --appendonly yes
     ports:
       - "${REDIS__PORT}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS__PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
