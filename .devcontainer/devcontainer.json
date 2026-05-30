@@ -9,7 +9,7 @@
   },
 
   "remoteEnv": {
-    "UV_PYTHON": "/usr/local/bin/python3.11",
+    "UV_PYTHON": "3.12",
     "UV_PROJECT_ENVIRONMENT": "${containerWorkspaceFolder}/.venv",
     "VIRTUAL_ENV": "${containerWorkspaceFolder}/.venv",
     "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
@@ -42,7 +42,7 @@
   },
 
   // recreate venv on every rebuild — fast because uv-cache volume is warm
-  "postCreateCommand": "uv venv --python /usr/local/bin/python3.11 && uv sync --all-groups --all-extras && uv run pre-commit install",
+  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.cache/uv && uv venv --python 3.12 && uv sync --all-groups --all-extras && uv run pre-commit install",
 
   "forwardPorts": [8000, 8888, 3000, 9090, 6379, 5432],
   "portsAttributes": {
