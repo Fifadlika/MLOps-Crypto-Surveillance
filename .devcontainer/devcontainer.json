@@ -5,8 +5,7 @@
   "workspaceFolder": "/workspaces/MLOps-Crypto-Surveillance",
 
   "features": {
-    "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/astral-sh/uv:1": {}
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
   },
 
   "remoteEnv": {
