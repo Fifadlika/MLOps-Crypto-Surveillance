@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+      - uv-cache:/home/vscode/.cache/uv
+    command: sleep infinity
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES__USER}:${POSTGRES__PASSWORD}@db:${POSTGRES__PORT}/${POSTGRES__DB}
+      - REDIS_URL=redis://:${REDIS__PASSWORD}@redis:${REDIS__PORT}/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mlops-net
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES__USER}
+      POSTGRES_PASSWORD: ${POSTGRES__PASSWORD}
+      POSTGRES_DB: ${POSTGRES__DB}
+    ports:
+      - "${POSTGRES__PORT}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d  # runs once on first volume init
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER} -d ${POSTGRES__DB} -h localhost -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mlops-net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS__PASSWORD}
+    ports:
+      - "${REDIS__PORT}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS__PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - mlops-net
+
+volumes:
+  postgres-data:   # survives devcontainer rebuilds
+  redis-data:      # survives devcontainer rebuilds
+  uv-cache:        # survives devcontainer rebuilds
+
+networks:
+  mlops-net:
+    driver: bridge

@@ -1,12 +1,26 @@
 {
   "name": "MLOps-Crypto-Surveillance",
-  "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/MLOps-Crypto-Surveillance",
+
+  "features": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/astral-sh/uv:1": {}
+  },
+
+  "remoteEnv": {
+    "UV_PYTHON": "/usr/local/bin/python3.11",
+    "UV_PROJECT_ENVIRONMENT": "${containerWorkspaceFolder}/.venv",
+    "VIRTUAL_ENV": "${containerWorkspaceFolder}/.venv",
+    "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
+  },
 
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-python.black-formatter",        // ✅ added
+        "ms-python.black-formatter",
         "ms-toolsai.jupyter",
         "ms-azuretools.vscode-docker",
         "github.copilot",
@@ -28,18 +42,10 @@
     }
   },
 
-  "features": {
-    "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/va-h/devcontainers-features/uv:1": {}, 
-    "ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {},
-    "ghcr.io/42atomys/devcontainers-features/redis-cli:1": {}
-  },
+  // recreate venv on every rebuild — fast because uv-cache volume is warm
+  "postCreateCommand": "uv venv --python /usr/local/bin/python3.11 && uv sync --all-groups --all-extras && uv run pre-commit install",
 
-  "postCreateCommand": "uv sync --all-groups --all-extras && uv run pre-commit install",
-
-  "postStartCommand": "bash .devcontainer/setup_services.sh",
-
-  "forwardPorts": [8000, 8888, 3000, 9090, 6379],
+  "forwardPorts": [8000, 8888, 3000, 9090, 6379, 5432],
   "portsAttributes": {
     "8000": { "label": "FastAPI Inference Service" },
     "8888": { "label": "Jupyter Notebook" },
@@ -47,5 +53,7 @@
     "9090": { "label": "Prometheus" },
     "6379": { "label": "Redis" },
     "5432": { "label": "PostgreSQL" }
-  }
+  },
+
+  "remoteUser": "vscode"
 }
