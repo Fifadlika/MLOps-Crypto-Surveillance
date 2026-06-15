@@ -18,6 +18,7 @@ from src.training.trainer import (
     IsolationForestTrainer,
     XGBoostVolatilityTrainer,
 )
+from src.training.utils import get_tracking_uri
 
 load_dotenv()
 
@@ -82,34 +83,14 @@ KLINE_FEATURE_COLS = [
 
 
 def _get_engine():
-    mlflow_uri = os.getenv("MLFLOW_TRACKING_URI")
-
-    # Cek apakah MLflow URI menggunakan skema database
-    if mlflow_uri and mlflow_uri.startswith("postgresql"):
-        db_uri = mlflow_uri
-    else:
-        # Fallback ke konfigurasi postgres default jika MLflow bukan DB URI
-        db_uri = (
-            f"postgresql+psycopg2://"
-            f"{os.environ['POSTGRES__USER']}:{os.environ['POSTGRES__PASSWORD']}"
-            f"@{os.environ['POSTGRES__HOST']}:{os.environ['POSTGRES__PORT']}"
-            f"/{os.environ['POSTGRES__DB']}"
-        )
-
-    return sqlalchemy.create_engine(db_uri)
-
-
-def _get_tracking_uri() -> str:
-    explicit = os.getenv("MLFLOW_TRACKING_URI")
-    if explicit:
-        return explicit
-    return (
+    db_uri = (
         f"postgresql+psycopg2://"
         f"{os.environ['POSTGRES__USER']}:{os.environ['POSTGRES__PASSWORD']}"
         f"@{os.environ['POSTGRES__HOST']}:{os.environ['POSTGRES__PORT']}"
         f"/{os.environ['POSTGRES__DB']}"
     )
 
+    return sqlalchemy.create_engine(db_uri)
 
 def load_features(symbol: str, model_type: str):
     """
@@ -193,7 +174,7 @@ def load_features(symbol: str, model_type: str):
 
 
 def run_experiment(symbol: str, model_type: str, params: dict):
-    mlflow.set_tracking_uri(_get_tracking_uri())
+    mlflow.set_tracking_uri(get_tracking_uri())
     mlflow.set_experiment(EXPERIMENT_NAMES[model_type])
 
     with mlflow.start_run(run_name=f"{symbol}_{model_type}"):
@@ -234,6 +215,7 @@ if __name__ == "__main__":
     parser.add_argument("--symbol", default="BTCUSDT")
     parser.add_argument("--model", choices=["anomaly", "volatility"], default="anomaly")
     parser.add_argument("--contamination", type=float, default=0.05)
+    parser.add_argument("--learning_rate", type=float, default=0.1)
     parser.add_argument("--n_estimators", type=int, default=100)
     parser.add_argument("--max_depth", type=int, default=6)
     args = parser.parse_args()
@@ -242,7 +224,11 @@ if __name__ == "__main__":
     if args.model == "anomaly":
         params = {"contamination": args.contamination, "n_estimators": args.n_estimators}
     else:
-        params = {"max_depth": args.max_depth}
+        params = {
+            "max_depth": args.max_depth,
+            "learning_rate": args.learning_rate,
+            "n_estimators": args.n_estimators,
+        }
 
     run_id = run_experiment(args.symbol, args.model, params)
     print(f"run_id: {run_id}")
