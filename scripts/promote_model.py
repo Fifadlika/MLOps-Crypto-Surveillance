@@ -12,7 +12,7 @@ import sys
 
 import mlflow
 from src.training.evaluator import check_thresholds
-from src.training.registry import _get_tracking_uri, register_model, transition_stage
+from src.training.registry import get_tracking_uri, register_model, transition_stage
 
 # Metric terbaik per model type — anomaly: f1 DESC, volatility: mae_pct ASC
 BEST_METRIC = {
@@ -32,7 +32,7 @@ EXPERIMENT_NAMES = {
 
 
 def get_best_run_id(experiment_name: str, model_type: str) -> tuple[str, dict]:
-    mlflow.set_tracking_uri(_get_tracking_uri())  # ← pakai fungsi dari registry.py
+    mlflow.set_tracking_uri(get_tracking_uri())  # ← pakai fungsi dari registry.py
 
     metric, order = BEST_METRIC[model_type]
     runs = mlflow.search_runs(

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy
 from scipy import stats
+from sklearn.model_selection import train_test_split
 
 import mlflow
 from src.training.evaluator import check_thresholds, evaluate_anomaly, evaluate_volatility
@@ -58,7 +59,6 @@ TRADE_FEATURE_COLS = [
 ]
 
 KLINE_FEATURE_COLS = [
-    "atr_5",
     "atr_15",
     "atr_60",
     "hl_ratio_5",
@@ -91,6 +91,7 @@ def _get_engine():
     )
 
     return sqlalchemy.create_engine(db_uri)
+
 
 def load_features(symbol: str, model_type: str):
     """
@@ -185,7 +186,22 @@ def run_experiment(symbol: str, model_type: str, params: dict):
 
         trainer: BaseTrainer
 
-        if model_type == "anomaly":
+        if model_type == "volatility":
+            X, y = load_features(symbol, model_type)
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+            trainer = XGBoostVolatilityTrainer(params=params)
+            trainer.fit(X_train, y_train)
+            y_pred = trainer.predict(X_test)
+            metrics = evaluate_volatility(y_test, y_pred)
+            mlflow.log_params(trainer.get_params())
+            mlflow.log_param("test_size", 0.2)
+            mlflow.log_metrics(metrics)
+            mlflow.xgboost.log_model(trainer.model, name="xgboost-volatility")
+            passed, details = check_thresholds(metrics, "volatility")
+
+        else:
             trainer = IsolationForestTrainer(params=params)
             trainer.fit(X)
             y_pred = trainer.predict(X)
@@ -194,16 +210,6 @@ def run_experiment(symbol: str, model_type: str, params: dict):
             mlflow.log_metrics(metrics)
             mlflow.sklearn.log_model(trainer.model, name="isolation-forest")
             passed, details = check_thresholds(metrics, "anomaly")
-
-        else:
-            trainer = XGBoostVolatilityTrainer(params=params)
-            trainer.fit(X, y)
-            y_pred = trainer.predict(X)
-            metrics = evaluate_volatility(y, y_pred)
-            mlflow.log_params(trainer.get_params())
-            mlflow.log_metrics(metrics)
-            mlflow.xgboost.log_model(trainer.model, name="xgboost-volatility")
-            passed, details = check_thresholds(metrics, "volatility")
 
         mlflow.log_param("threshold_passed", passed)
         logger.info(f"Run selesai. Threshold passed: {passed} | Details: {details}")
